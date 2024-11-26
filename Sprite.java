@@ -53,6 +53,17 @@ public class Sprite {
                 }
             }
         }
+        // 球不能穿過flatform
+        for(Rectangle platform : platforms) {
+            if(bounds.intersects(platform)) {
+                if(vY < 0) {
+                    if(y + BALL_SIZE > platform.y && y < platform.y) {
+                        y = platform.y + platform.height; // y是往下增加的所以用+
+                        vY = 0;
+                    }
+                }
+            }
+        }
 
         // 檢查撞到其他玩家
         for(Sprite otherPlayer : otherPlayers) {
