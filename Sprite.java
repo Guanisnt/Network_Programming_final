@@ -11,6 +11,7 @@ public class Sprite {
     private static final double FRICTION = 0.98; // 速度每次減少2%
     private int id; // 玩家id
     private boolean isAlive = true; 
+    private boolean isOnGround = false;
     private Color color;
     private static final int BALL_SIZE = 30;
 
@@ -41,12 +42,14 @@ public class Sprite {
         y += vY;
 
         // 檢查碰到地板
+        isOnGround = false;
         Rectangle bounds = new Rectangle((int)x, (int)y, BALL_SIZE, BALL_SIZE); // 球的範圍，hitbox的概念
         for(Rectangle platform : platforms) { // 檢查每個地板
             if(bounds.intersects(platform)) { // 如果球在地板上方
                 if(vY > 0) {
                     y = platform.y - BALL_SIZE; // 球的底部和地板的頂部對齊
                     vY = 0;
+                    isOnGround = true;
                 }
             }
         }
@@ -85,6 +88,7 @@ public class Sprite {
     }
 
     public void jump() {
+        if(!isOnGround) return;
         vY = JUMP_FORCE;
     }
 
