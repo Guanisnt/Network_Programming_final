@@ -30,6 +30,7 @@ public class GameClient extends JFrame {
                     case KeyEvent.VK_LEFT: sendInput("LEFT"); break;
                     case KeyEvent.VK_RIGHT: sendInput("RIGHT"); break;
                     case KeyEvent.VK_UP: sendInput("JUMP"); break;
+                    case KeyEvent.VK_SPACE: sendInput("IncG"); break;  // 提高重力
                 }
             }
         });

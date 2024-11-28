@@ -103,6 +103,10 @@ public class Sprite {
         vY = JUMP_FORCE;
     }
 
+    public void increaseGravity() {
+        vY = GRAVITY + 0.5;
+    }
+
     public void draw(Graphics g) {
         if(!isAlive) return;
         g.setColor(color);

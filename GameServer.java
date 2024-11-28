@@ -78,6 +78,7 @@ public class GameServer {
                 case "LEFT": player.moveLeft(); break;
                 case "RIGHT": player.moveRight(); break;
                 case "JUMP": player.jump(); break;
+                case "IncG": player.increaseGravity(); break;
             }
         }
     }
