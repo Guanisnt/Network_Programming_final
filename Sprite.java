@@ -5,9 +5,9 @@ import java.util.List;
 public class Sprite {
     private double x, y; // 座標
     private double vX, vY; // 速度 
-    private static final double GRAVITY = 0.5; // 重力
-    private static final double MOVE_SPEED = 3; // 移動速度
-    private static final double JUMP_FORCE = -12; // 跳躍力
+    private static final double GRAVITY = 0.6; // 重力
+    private static final double MOVE_SPEED = 4; // 移動速度
+    private static final double JUMP_FORCE = -15; // 跳躍力
     private static final double FRICTION = 0.98; // 速度每次減少2%
     private int id; // 玩家id
     private boolean isAlive = true; 
@@ -85,7 +85,7 @@ public class Sprite {
         }
 
         // 檢查邊界
-        if(y > 600 || y < -100 || x < -100 || x > 900) {
+        if(y > 720 || y < -100 || x < -100 || x > 1500) {
             isAlive = false;
         }
     }

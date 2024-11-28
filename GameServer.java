@@ -1,33 +1,83 @@
 import java.io.*;
 import java.net.*;
-import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GameServer {
-    private static final int PORT = 123;
-    private ServerSocket ss;
+    private static final int UDP_CONNECTION_PORT = 12345;
+    private static final int UDP_MOVEMENT_PORT = 124;
+    private DatagramSocket udpConnectionSocket; // 用來接收client連線
+    private DatagramSocket udpMovementSocket; // 用來接收client移動封包
+
     private ConcurrentHashMap<Integer, ClientHandler> clients = new ConcurrentHashMap<>();
     private GameState gameState = new GameState();
     private int nextId = 1;
 
     public GameServer() {
         try {
-            ss = new ServerSocket(PORT);
-            System.out.println("Server started on port " + PORT);
+            udpConnectionSocket = new DatagramSocket(UDP_CONNECTION_PORT);
+            udpMovementSocket = new DatagramSocket(UDP_MOVEMENT_PORT);
+            System.out.println("Server started on port " + UDP_CONNECTION_PORT);
             System.out.println("waiting for client to connect...");
+            new Thread(this::receiveUDPConnections).start(); // client連線
+            new Thread(this::receiveUDPMovements).start(); // client移動
             new Thread(this::gameloop).start(); // 開始遊戲迴圈
-            while(true) {
-                Socket socket = ss.accept();
-                int clientId = nextId++;
-                ClientHandler client = new ClientHandler(clientId, socket, this);
-                clients.put(clientId, client);
-                sendToNewClient(client); // 送給新client所有玩家資訊，不然新家進來的看不到其他玩家
-                gameState.addPlayer(clientId); // 新增玩家
-                broadcastMessage("new_player" + clientId);
-                new Thread(client).start();
-            }
         } catch (IOException e) {
             e.printStackTrace();
+        }
+    }
+
+    // 接收client連線
+    private void receiveUDPConnections() {
+        System.out.println("connected");
+        byte[] receiveData = new byte[1024];
+        while(true) {
+            try {
+                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                udpConnectionSocket.receive(receivePacket);
+
+                // 處理新的client，要放到ClientHandler裡面處理
+                InetAddress clientAddress = receivePacket.getAddress();
+                int clientPort = receivePacket.getPort();
+                int ClientId = nextId++;
+                ClientHandler client = new ClientHandler(ClientId, clientAddress, clientPort, this, udpConnectionSocket);
+                clients.put(ClientId, client);
+
+                // 送給新client所有玩家資訊，不然新家進來的看不到其他玩家
+                String welcomeMsg = "new_player:" + ClientId;
+                client.sendMsg(welcomeMsg);
+
+                // 新增玩家
+                gameState.addPlayer(ClientId);
+                broadcastMessage(welcomeMsg);
+
+                // 每個client都有自己的一個ClientHandler(簡報的ServerThread)
+                new Thread(client).start();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
+    // 接收client操作指令
+    private void receiveUDPMovements() {
+        byte[] receiveData = new byte[1024];
+        while(true) {
+            try {
+                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                udpMovementSocket.receive(receivePacket);
+                String movementData = new String(receivePacket.getData(), 0, receivePacket.getLength()).trim();
+                System.out.println("Received movement: " + movementData);
+                
+                // Format: "clientId:MOVEMENT"
+                String[] parts = movementData.split(":");
+                if(parts.length == 2) {
+                    int clientId = Integer.parseInt(parts[0]);
+                    String movement = parts[1];
+                    handleInput(clientId, movement);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
         }
     }
 
@@ -91,6 +141,5 @@ public class GameServer {
 
     public static void main(String[] args) {
         new GameServer();
-        // new GameServer().start();
     }
 }
