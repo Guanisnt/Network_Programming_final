@@ -5,16 +5,18 @@ import java.io.*;
 import java.net.*;
 
 public class GameClient extends JFrame {
-    private static final int PORT = 123;
-    private static final int WIDTH = 800;
-    private static final int HEIGHT = 600;
+    private static final int UDP_CONNECTION_PORT = 12345;
+    private static final int UDP_MOVEMENT_PORT = 124;
+    private static final int BUFSIZE = 1024;
+    private static final int WIDTH = 1440;
+    private static final int HEIGHT = 720;
     private GamePanel gamePanel;
-    private Socket socket;
-    private DataOutputStream dos;
-    private BufferedReader bin;
     private int clientId = -1;
     private GameState gameState = new GameState();
-    private PrintWriter out;
+    private DatagramSocket udpSocket; // UDP socket
+    private DatagramPacket connectPacket; // 連線的封包
+    private DatagramPacket sendPacket; // 送出的封包
+    private InetAddress serverAddress; // server的IP
 
     public GameClient() {
         this.setTitle("hello");
@@ -23,26 +25,41 @@ public class GameClient extends JFrame {
         gamePanel = new GamePanel(); // 畫面
         this.add(gamePanel);
 
-        addKeyListener(new KeyAdapter() {
-            @Override
-            public void keyPressed(KeyEvent e) {
-                switch (e.getKeyCode()) {
-                    case KeyEvent.VK_LEFT: sendInput("LEFT"); break;
-                    case KeyEvent.VK_RIGHT: sendInput("RIGHT"); break;
-                    case KeyEvent.VK_UP: sendInput("JUMP"); break;
-                }
-            }
-        });
-
-        // connectServer("localhost", PORT);
-        setFocusable(true);
-
         try {
-            socket = new Socket("localhost", PORT);
-            // dos = new DataOutputStream(socket.getOutputStream());
-            out = new PrintWriter(socket.getOutputStream(), true);
-            bin = new BufferedReader(new InputStreamReader(socket.getInputStream()));
-            new Thread(this::receiveMessage).start();
+            udpSocket = new DatagramSocket();
+            serverAddress = InetAddress.getByName("localhost"); // server的IP
+            byte[] connectData = "connect".getBytes(); // 連線訊息
+            connectPacket = new DatagramPacket(connectData, connectData.length, serverAddress, UDP_CONNECTION_PORT); // 連線封包
+            udpSocket.send(connectPacket); // 連線
+            new Thread(this::receiveUDPMessage).start(); // 接收server訊息
+
+            addKeyListener(new KeyAdapter() {
+                @Override
+                public void keyPressed(KeyEvent e) {
+                    if(clientId != -1) {
+                        String movement = null;
+                        switch (e.getKeyCode()) {
+                            case KeyEvent.VK_LEFT: 
+                                movement = clientId + ":LEFT"; 
+                                break;
+                            case KeyEvent.VK_RIGHT: 
+                                movement = clientId + ":RIGHT"; 
+                                break;
+                            case KeyEvent.VK_UP: 
+                                movement = clientId + ":JUMP"; 
+                                break;
+                            case KeyEvent.VK_SPACE: 
+                                movement = clientId + ":IncG"; 
+                                break;
+                        }
+                        
+                        if(movement != null) {
+                            sendUDPMovement(movement);
+                        }
+                    }
+                }
+            });
+
             setFocusable(true);
         } catch (IOException e) {
             e.printStackTrace();
@@ -50,13 +67,31 @@ public class GameClient extends JFrame {
         }
     }
 
-    public void sendInput(String input) {
-        out.println(input);
-        // try {
-        //     dos.writeBytes(input + "\n");
-        // } catch (IOException e) {
-        //     e.printStackTrace();
-        // }
+    // 接收server訊息
+    private void receiveUDPMessage() {
+        byte[] receiveData = new byte[BUFSIZE];
+        try {
+            while(true) {
+                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                udpSocket.receive(receivePacket); // 收送進來的封包
+                String msg = new String(receivePacket.getData(), 0, receivePacket.getLength()).trim();
+                processMsg(msg);
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+
+    // 送出移動訊息
+    private void sendUDPMovement(String movement) {
+        try {
+            System.out.println("Sending movement: " + movement);
+            byte[] sendData = movement.getBytes();
+            sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, UDP_MOVEMENT_PORT);
+            udpSocket.send(sendPacket);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
     }
 
     public class GamePanel extends JPanel {
@@ -64,18 +99,6 @@ public class GameClient extends JFrame {
         protected void paintComponent(Graphics g) {
             super.paintComponent(g); 
             gameState.draw(g); // 畫所有東西
-        }
-    }
-
-    public void receiveMessage() {
-        try {
-            String inputMsg;
-            while((inputMsg = bin.readLine()) != null) {
-                // System.out.println("Server: " + inputMsg);
-                processMsg(inputMsg);
-            }
-        } catch (IOException e) {
-            e.printStackTrace();
         }
     }
 

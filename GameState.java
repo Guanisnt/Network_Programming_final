@@ -20,8 +20,9 @@ public class GameState {
     }
 
     public void initPlatforms() {
-        platforms.add(new Rectangle(100, 500, 600, 20));
+        platforms.add(new Rectangle(100, 500, 1200, 20));
         platforms.add(new Rectangle(200, 400, 400, 20));
+        platforms.add(new Rectangle(800, 400, 400, 20));
     }
 
     // 新增玩家
@@ -58,7 +59,7 @@ public class GameState {
     public void draw(Graphics g) {
         // 畫背景
         g.setColor(new Color(135, 206, 235)); // Sky blue
-        g.fillRect(0, 0, 800, 600);
+        g.fillRect(0, 0, 1440, 720);
 
         // 畫地板
         g.setColor(Color.GREEN);

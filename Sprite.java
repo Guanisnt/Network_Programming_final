@@ -5,12 +5,13 @@ import java.util.List;
 public class Sprite {
     private double x, y; // 座標
     private double vX, vY; // 速度 
-    private static final double GRAVITY = 0.5; // 重力
-    private static final double MOVE_SPEED = 3; // 移動速度
-    private static final double JUMP_FORCE = -12; // 跳躍力
+    private static final double GRAVITY = 0.6; // 重力
+    private static final double MOVE_SPEED = 4; // 移動速度
+    private static final double JUMP_FORCE = -15; // 跳躍力
     private static final double FRICTION = 0.98; // 速度每次減少2%
     private int id; // 玩家id
     private boolean isAlive = true; 
+    private boolean isOnGround = false;
     private Color color;
     private static final int BALL_SIZE = 30;
 
@@ -41,12 +42,25 @@ public class Sprite {
         y += vY;
 
         // 檢查碰到地板
+        isOnGround = false;
         Rectangle bounds = new Rectangle((int)x, (int)y, BALL_SIZE, BALL_SIZE); // 球的範圍，hitbox的概念
         for(Rectangle platform : platforms) { // 檢查每個地板
             if(bounds.intersects(platform)) { // 如果球在地板上方
                 if(vY > 0) {
                     y = platform.y - BALL_SIZE; // 球的底部和地板的頂部對齊
                     vY = 0;
+                    isOnGround = true;
+                }
+            }
+        }
+        // 球不能穿過flatform
+        for(Rectangle platform : platforms) {
+            if(bounds.intersects(platform)) {
+                if(vY < 0) {
+                    if(y + BALL_SIZE > platform.y && y < platform.y) {
+                        y = platform.y + platform.height; // y是往下增加的所以用+
+                        vY = 0;
+                    }
                 }
             }
         }
@@ -71,7 +85,7 @@ public class Sprite {
         }
 
         // 檢查邊界
-        if(y > 600 || y < -100 || x < -100 || x > 900) {
+        if(y > 720 || y < -100 || x < -100 || x > 1500) {
             isAlive = false;
         }
     }
@@ -85,7 +99,12 @@ public class Sprite {
     }
 
     public void jump() {
+        if(!isOnGround) return;
         vY = JUMP_FORCE;
+    }
+
+    public void increaseGravity() {
+        vY = GRAVITY + 0.5;
     }
 
     public void draw(Graphics g) {

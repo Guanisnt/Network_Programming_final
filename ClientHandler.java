@@ -4,53 +4,44 @@ import java.net.*;
 
 public class ClientHandler implements Runnable {
     private int clientId;
-    private Socket socket;
     private GameServer server;
-    private DataOutputStream dos;
-    private BufferedReader bin;
-    private PrintWriter out;
+    private DatagramSocket udpSocket;
+    private InetAddress clientAddress;
+    private int clientPort;
 
-    public ClientHandler(int clientId, Socket socket, GameServer server) {
+    public ClientHandler(int clientId, InetAddress clientAddress, int clientPort, GameServer server, DatagramSocket udpSocket) {
         this.clientId = clientId;
-        this.socket = socket;
         this.server = server;
+        this.clientAddress = clientAddress;
+        this.clientPort = clientPort;
+        this.udpSocket = udpSocket;
+    }
+
+    // server廣播訊息給所有client會用到，用UDP
+    public void sendMsg(String msg) {
         try {
-            // dos = new DataOutputStream(socket.getOutputStream());
-            out = new PrintWriter(socket.getOutputStream(), true);
-            bin = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            byte[] sendData = msg.getBytes();
+            DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, clientAddress, clientPort);
+            udpSocket.send(sendPacket);
         } catch (IOException e) {
             e.printStackTrace();
         }
     }
 
-    // server廣播訊息給所有client會用到
-    public void sendMsg(String msg) {
-        out.println(msg);
-        // try {
-        //     dos.writeBytes(msg + "\n");
-        // } catch (IOException e) {
-        //     e.printStackTrace();
-        // }
-    }
-
     @Override
     public void run() {
+        byte[] receiveData = new byte[1024];
         try {
-            String inputLine; // client端傳來的訊息
-            while((inputLine = bin.readLine()) != null) {
-                System.out.println("Client " + clientId + ": " + inputLine);
-                server.handleInput(clientId, inputLine); // 呼叫server的handleInput處理
+            while(true) {
+                DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
+                udpSocket.receive(receivePacket);
+                String inputLine = new String(receivePacket.getData(), 0, receivePacket.getLength()).trim(); // trim可以刪掉字串頭尾的空白
+                System.out.println("Client " + clientId + " sent: " + inputLine);
             }
         } catch (IOException e) {
             e.printStackTrace();
-            System.out.println("Client " + clientId + " disconnected");
         } finally {
-            try {
-                socket.close();
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
-            server.removeClient(clientId); // 移除client
+            server.removeClient(clientId);
         }
     }
 }
