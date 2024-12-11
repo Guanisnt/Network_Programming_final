@@ -34,7 +34,7 @@ public class GameServer {
             try {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 udpConnectionSocket.receive(receivePacket);
-
+                System.out.println("Received connection from " + receivePacket.getAddress() + ":" + receivePacket.getPort());
                 // 處理新的client，要放到ClientHandler裡面處理
                 InetAddress clientAddress = receivePacket.getAddress();
                 int clientPort = receivePacket.getPort();
