@@ -234,7 +234,29 @@ public class GameClient extends JFrame {
     }
 
     public static void main(String[] args) {
-        GameClient client = new GameClient();
-        client.setVisible(true);
+        // UI
+        JFrame startWindow = new JFrame("Start Game");
+        startWindow.setSize(1440, 720);
+        startWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        startWindow.setLayout(new BorderLayout());
+
+        JLabel welcomeLabel = new JLabel("Welcome to the Game!", SwingConstants.CENTER);
+        JButton startButton = new JButton("Start Game");
+    
+        startWindow.add(welcomeLabel, BorderLayout.CENTER);
+        startWindow.add(startButton, BorderLayout.SOUTH);
+    
+        // 按鈕點擊事件
+        startButton.addActionListener(e -> {
+            // 如果按下開始
+            SwingUtilities.invokeLater(() -> {
+                GameClient client = new GameClient(); // 開始，new 一個 GameClient
+                client.setVisible(true);
+            });
+            startWindow.dispose(); // 把UI關掉
+        });
+
+        startWindow.setLocationRelativeTo(null); // 置中
+        startWindow.setVisible(true);
     }
 }
