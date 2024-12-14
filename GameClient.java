@@ -105,7 +105,7 @@ public class GameClient extends JFrame {
             String msg;
             while ((msg = tcpReader.readLine()) != null) {
                 synchronized (chatMessages) {
-                    if (chatMessages.size() >= 6) {
+                    if (chatMessages.size() >= 7) {
                         chatMessages.remove(0);
                     }
                     chatMessages.add(msg);
