@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap; // 有多執行續的Map，不用寫synchronized
 
 public class GameState {
+    
+
     private ConcurrentHashMap<Integer, Sprite> players = new ConcurrentHashMap<>(); // <playerID, sprite>
     private List<Rectangle> platforms = new ArrayList<>(); // 地板
     private static final Point[] bornPoint = {
@@ -74,4 +76,6 @@ public class GameState {
     }
 
     public ConcurrentHashMap<Integer, Sprite> getPlayers() {return players;} // server要用
+
+    
 }
