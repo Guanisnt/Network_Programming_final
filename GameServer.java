@@ -11,6 +11,8 @@ public class GameServer {
     private ConcurrentHashMap<Integer, ClientHandler> clients = new ConcurrentHashMap<>();
     private GameState gameState = new GameState();
     private int nextId = 1;
+    private ConcurrentHashMap<Integer, ChattingRoomHandler> chatClients = new ConcurrentHashMap<>();// 聊天室的client
+
 
     public GameServer() {
         try {
@@ -21,6 +23,7 @@ public class GameServer {
             new Thread(this::receiveUDPConnections).start(); // client連線
             new Thread(this::receiveUDPMovements).start(); // client移動
             new Thread(this::gameloop).start(); // 開始遊戲迴圈
+            new Thread(this::tcpgamechattingroom).start(); // 開始遊戲聊天室
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -57,6 +60,83 @@ public class GameServer {
             }
         }
     }
+
+    // 開始遊戲聊天室
+    private void tcpgamechattingroom() {
+        try {
+            ServerSocket serverSocket = new ServerSocket(12346);
+            System.out.println("Chat server started on port 12346");
+            while (true) {
+                Socket clientSocket = serverSocket.accept();
+                int playerId = nextId;
+                ChattingRoomHandler chatHandler = new ChattingRoomHandler(clientSocket, playerId, this);
+                chatClients.put(playerId, chatHandler);
+                new Thread(chatHandler).start();
+            }
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+    
+    public void broadcastChatMessage(String message) {
+        for (ChattingRoomHandler chatHandler : chatClients.values()) {
+            chatHandler.sendMessage(message);
+        }
+    }
+
+    // 處理每個玩家的聊天訊息並廣播給所有人
+    class ChattingRoomHandler implements Runnable {
+        private Socket socket;
+        private int playerId;
+        private GameServer server;
+        private BufferedWriter writer;
+        private BufferedReader reader;
+    
+        public ChattingRoomHandler(Socket socket, int clientId, GameServer server) {
+            this.socket = socket;
+            this.playerId = playerId;
+            this.server = server;
+            try {
+                writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
+                reader = new BufferedReader(new InputStreamReader(socket.getInputStream()));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    
+        @Override
+        public void run() {
+            try {
+                String message;
+                while ((message = reader.readLine()) != null) {
+                    System.out.println("Received from client " + message);
+                    server.broadcastChatMessage("Player" + message);
+                }
+            } catch (IOException e) {
+                e.printStackTrace();
+            } finally {
+                server.chatClients.remove(playerId);
+                try {
+                    socket.close();
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+    
+        public void sendMessage(String message) {
+            try {
+                writer.write(message);
+                writer.newLine();
+                writer.flush();
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+    }
+    
+    
+
 
     // 接收client操作指令
     private void receiveUDPMovements() {
