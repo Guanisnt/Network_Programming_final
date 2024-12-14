@@ -68,9 +68,9 @@ public class GameServer {
             System.out.println("Chat server started on port 12346");
             while (true) {
                 Socket clientSocket = serverSocket.accept();
-                int clientId = nextId++;
-                ChattingRoomHandler chatHandler = new ChattingRoomHandler(clientSocket, clientId, this);
-                chatClients.put(clientId, chatHandler);
+                int playerId = nextId;
+                ChattingRoomHandler chatHandler = new ChattingRoomHandler(clientSocket, playerId, this);
+                chatClients.put(playerId, chatHandler);
                 new Thread(chatHandler).start();
             }
         } catch (IOException e) {
@@ -87,14 +87,14 @@ public class GameServer {
     // 處理每個玩家的聊天訊息並廣播給所有人
     class ChattingRoomHandler implements Runnable {
         private Socket socket;
-        private int clientId;
+        private int playerId;
         private GameServer server;
         private BufferedWriter writer;
         private BufferedReader reader;
     
         public ChattingRoomHandler(Socket socket, int clientId, GameServer server) {
             this.socket = socket;
-            this.clientId = clientId;
+            this.playerId = playerId;
             this.server = server;
             try {
                 writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -109,13 +109,13 @@ public class GameServer {
             try {
                 String message;
                 while ((message = reader.readLine()) != null) {
-                    System.out.println("Received from client " + clientId + ": " + message);
-                    server.broadcastChatMessage("Player " + clientId + ": " + message);
+                    System.out.println("Received from client " + message);
+                    server.broadcastChatMessage("Player" + message);
                 }
             } catch (IOException e) {
                 e.printStackTrace();
             } finally {
-                server.chatClients.remove(clientId);
+                server.chatClients.remove(playerId);
                 try {
                     socket.close();
                 } catch (IOException e) {

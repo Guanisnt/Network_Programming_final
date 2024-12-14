@@ -24,6 +24,7 @@ public class GameClient extends JFrame {
     private BufferedReader tcpReader;
     private boolean inChatMode = false;
     private final List<String> chatMessages = new ArrayList<>();
+    private int playerId = -1;
 
     public GameClient() {
         this.setTitle("Game with Chat");
@@ -90,7 +91,7 @@ public class GameClient extends JFrame {
     // 發送聊天室訊息
     private void sendChatMessage(String message) {
         try {
-            tcpWriter.write(clientId + ":" + message); 
+            tcpWriter.write(playerId + " : " + message); 
             tcpWriter.newLine();
             tcpWriter.flush();
         } catch (IOException e) {
@@ -103,7 +104,6 @@ public class GameClient extends JFrame {
         try {
             String msg;
             while ((msg = tcpReader.readLine()) != null) {
-                System.out.println("Received message: " + msg);  // 偵錯輸出
                 synchronized (chatMessages) {
                     if (chatMessages.size() >= 6) {
                         chatMessages.remove(0);
@@ -172,6 +172,9 @@ public class GameClient extends JFrame {
             if (clientId == -1) {
                 clientId = id;
             }
+            if(playerId == -1){
+                playerId = id;
+            }
             if (!gameState.getPlayers().containsKey(id)) {
                 gameState.addPlayer(id);
             }
@@ -195,9 +198,6 @@ public class GameClient extends JFrame {
             int chatHeight = 140; // 聊天框高度
             int chatX = 10; // 聊天框 X 座標
             int chatY = getHeight() - chatHeight - 20; // 聊天框 Y 座標 (左下角)
-
-            System.out.println("Drawing chat with " + chatMessages.size() + " messages");
-            System.out.println("Chat window size: " + chatWidth + "x" + chatHeight + " at (" + chatX + ", " + chatY + ")");
         
             // 畫聊天框背景
             g.setColor(new Color(50, 50, 50, 150)); // 灰黑色半透明背景
@@ -218,11 +218,8 @@ public class GameClient extends JFrame {
             synchronized (chatMessages) {
                 for (String msg : chatMessages) {
                     if(!msg.isEmpty()){
-                        msg = msg.substring(10);
-                        char c = msg.charAt(0);
-                        int n = Character.getNumericValue(c);
-                        msg = msg.substring(1);
-                        g.drawString("Player"+n/2+msg, textX, textY);
+                       
+                        g.drawString(msg, textX, textY);
                         textY += lineHeight;
                     }
         
