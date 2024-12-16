@@ -16,9 +16,9 @@ public class GameState extends Frame{
     private List<Rectangle> platforms = new ArrayList<>(); // 地板
     private static final Point[] bornPoint = {
         new Point(225, 300),
-        new Point(600, 100),
-        new Point(150, 300),
-        new Point(600, 300)
+        new Point(1125, 350),
+        new Point(680, 400),
+        new Point(680, 150)
     };
 
     public GameState() {
@@ -40,7 +40,7 @@ public class GameState extends Frame{
 
     // 新增玩家
     public void addPlayer(int id) {
-        Sprite player = new Sprite(id, bornPoint[0].x, bornPoint[0].y);  // 用id來決定出生點
+        Sprite player = new Sprite(id, bornPoint[id%4].x, bornPoint[id%4].y);  // 用id來決定出生點
         System.out.println(bornPoint[id%4].x+" "+bornPoint[id%4].y);
         players.put(id, player);
     }
