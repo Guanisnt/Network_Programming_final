@@ -9,6 +9,7 @@ public class GameServer {
     private DatagramSocket udpMovementSocket; // 用來接收client移動封包
 
     private ConcurrentHashMap<Integer, ClientHandler> clients = new ConcurrentHashMap<>();
+    private ConcurrentHashMap<Integer, Integer> playerScores = new ConcurrentHashMap<>(); //計分
     private GameState gameState = new GameState();
     private int nextId = 1;
     private ConcurrentHashMap<Integer, ChattingRoomHandler> chatClients = new ConcurrentHashMap<>();// 聊天室的client
@@ -66,7 +67,7 @@ public class GameServer {
         try {
             ServerSocket serverSocket = new ServerSocket(12346);
             System.out.println("Chat server started on port 12346");
-            while (true) {
+            while(true) {
                 Socket clientSocket = serverSocket.accept();
                 int playerId = nextId;
                 ChattingRoomHandler chatHandler = new ChattingRoomHandler(clientSocket, playerId, this);
@@ -79,7 +80,7 @@ public class GameServer {
     }
     
     public void broadcastChatMessage(String message) {
-        for (ChattingRoomHandler chatHandler : chatClients.values()) {
+        for(ChattingRoomHandler chatHandler : chatClients.values()) {
             chatHandler.sendMessage(message);
         }
     }
@@ -108,11 +109,11 @@ public class GameServer {
         public void run() {
             try {
                 String message;
-                while ((message = reader.readLine()) != null) {
+                while((message = reader.readLine()) != null) {
                     System.out.println("Received from client " + message);
                     server.broadcastChatMessage("Player" + message);
                 }
-            } catch (IOException e) {
+            } catch(IOException e) {
                 e.printStackTrace();
             } finally {
                 server.chatClients.remove(playerId);
@@ -155,7 +156,7 @@ public class GameServer {
                     String movement = parts[1];
                     handleInput(clientId, movement);
                 }
-            } catch (IOException e) {
+            } catch(IOException e) {
                 e.printStackTrace();
             }
         }
@@ -164,12 +165,59 @@ public class GameServer {
     public void gameloop() {
         while(true) {
             gameState.update();
+            checkScores(); // 檢查分數
             broadcastGameState(); // 廣播遊戲狀態給所有client
             try {
                 Thread.sleep(16); // 睡一下不然太快，16ms是60fps
             } catch (InterruptedException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    private void checkScores() {
+        for(Sprite player : gameState.getPlayers().values()) { // <id, sprite>，檢查每個玩家
+            if(!player.isAlive()) { // 死了
+                int playerId = player.getId();
+                int opponentId = getOpponentId(playerId); // 對手id
+                if(opponentId != -1) {
+                    playerScores.put(opponentId, playerScores.getOrDefault(opponentId, 0) + 1);
+                    broadcastMessage("SCORE_UPDATE:" + playerId + ":" + playerScores.get(playerId) + "," + opponentId + ":" + playerScores.get(opponentId));
+                    System.out.println("Player " + playerId + " scored! Score: " + playerScores.get(playerId));
+                }
+
+                if(playerScores.getOrDefault(opponentId, 0) >= 3) {
+                    broadcastMessage("GAME_OVER:" + opponentId);
+                    resetGame();
+                } else {
+                    resetPlayer(playerId);
+                }
+            }
+        }
+    }
+
+    private int getOpponentId(int playerId) { // 找對手的id
+        for(Integer id : gameState.getPlayers().keySet()) {
+            if(id != playerId) {
+                return id;
+            }
+        }
+        return -1;
+    }
+
+    private void resetPlayer(int playerId) {
+        Sprite player = gameState.getPlayers().get(playerId);
+        if(player != null) {
+            player.setPosition(GameState.bornPoint[playerId % 4].x, GameState.bornPoint[playerId % 4].y);
+            player.setAlive(true);
+            player.setVelocity(0, 0);
+        }
+    }
+
+    private void resetGame() {
+        playerScores.clear();
+        for(Sprite player : gameState.getPlayers().values()) {
+            resetPlayer(player.getId());
         }
     }
 
@@ -187,16 +235,30 @@ public class GameServer {
     }
 
     // 把狀態用成字串，再用broadcastMessage廣播給所有client
+    // public void broadcastGameState() {
+    //     StringBuilder state = new StringBuilder("STATE:");
+    //     for(Sprite player : gameState.getPlayers().values()) { // <id, sprite>
+    //         state.append(player.getId()).append(",")
+    //              .append(player.getX()).append(",")
+    //              .append(player.getY()).append(",")
+    //              .append(player.getColor().getRGB()).append(",")
+    //              .append(player.getVelocityX()).append(",")
+    //              .append(player.getVelocityY()).append(",")
+    //              .append(player.isAlive()).append(";");
+    //     }
+    //     broadcastMessage(state.toString());
+    // }
     public void broadcastGameState() {
         StringBuilder state = new StringBuilder("STATE:");
-        for(Sprite player : gameState.getPlayers().values()) { // <id, sprite>
+        for(Sprite player : gameState.getPlayers().values()) {
             state.append(player.getId()).append(",")
                  .append(player.getX()).append(",")
                  .append(player.getY()).append(",")
                  .append(player.getColor().getRGB()).append(",")
                  .append(player.getVelocityX()).append(",")
                  .append(player.getVelocityY()).append(",")
-                 .append(player.isAlive()).append(";");
+                 .append(player.isAlive()).append(",")
+                 .append(playerScores.getOrDefault(player.getId(), 0)).append(";");
         }
         broadcastMessage(state.toString());
     }

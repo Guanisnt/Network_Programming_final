@@ -14,7 +14,7 @@ public class GameState extends Frame{
     private ConcurrentHashMap<Integer, Sprite> players = new ConcurrentHashMap<>(); // <playerID, sprite>
     BufferedImage bufferPage=null;
     private List<Rectangle> platforms = new ArrayList<>(); // 地板
-    private static final Point[] bornPoint = {
+    public static final Point[] bornPoint = {
         new Point(225, 300),
         new Point(1125, 350),
         new Point(680, 400),
