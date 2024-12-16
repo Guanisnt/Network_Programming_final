@@ -1,12 +1,13 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import javax.swing.*;
 
 public class GameClient extends JFrame {
+    private static final String SERVER_IP = "localhost";
     private static final int UDP_CONNECTION_PORT = 12345;
     private static final int UDP_MOVEMENT_PORT = 124;
     private static final int BUFSIZE = 1024;
@@ -25,6 +26,7 @@ public class GameClient extends JFrame {
     private boolean inChatMode = false;
     private final List<String> chatMessages = new ArrayList<>();
     private int playerId = -1;
+    private Map<Integer, Integer> playerScores = new HashMap<>();
 
     public GameClient() {
         this.setTitle("Game with Chat");
@@ -37,7 +39,7 @@ public class GameClient extends JFrame {
 
         try {
             // 設置 TCP 和 UDP 連線
-            serverAddress = InetAddress.getByName("localhost");
+            serverAddress = InetAddress.getByName(SERVER_IP);
             tcpSocket = new Socket(serverAddress, 12346);
             tcpWriter = new BufferedWriter(new OutputStreamWriter(tcpSocket.getOutputStream()));
             tcpReader = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
@@ -56,19 +58,19 @@ public class GameClient extends JFrame {
             addKeyListener(new KeyAdapter() {
                 @Override
                 public void keyPressed(KeyEvent e) {
-                    if (e.getKeyCode() == KeyEvent.VK_ENTER) {
-                        if (inChatMode) {
+                    if(e.getKeyCode() == KeyEvent.VK_ENTER) {
+                        if(inChatMode) {
                             String message = JOptionPane.showInputDialog("Enter your message:");
-                            if (message != null && !message.isEmpty()) {
+                            if(message != null && !message.isEmpty()) {
                                 sendChatMessage(message);
                             }
                             inChatMode = false;
                         } else {
                             inChatMode = true;
                         }
-                    } else if (!inChatMode && clientId != -1) {
+                    } else if(!inChatMode && clientId != -1) {
                         String movement = null;
-                        switch (e.getKeyCode()) {
+                        switch(e.getKeyCode()) {
                             case KeyEvent.VK_LEFT -> movement = clientId + ":LEFT";
                             case KeyEvent.VK_RIGHT -> movement = clientId + ":RIGHT";
                             case KeyEvent.VK_UP -> movement = clientId + ":JUMP";
@@ -82,7 +84,7 @@ public class GameClient extends JFrame {
             });
 
             setFocusable(true);
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
             System.exit(1);
         }
@@ -103,8 +105,8 @@ public class GameClient extends JFrame {
     private void receiveTCPMessages() {
         try {
             String msg;
-            while ((msg = tcpReader.readLine()) != null) {
-                synchronized (chatMessages) {
+            while((msg = tcpReader.readLine()) != null) {
+                synchronized(chatMessages) {
                     if (chatMessages.size() >= 7) {
                         chatMessages.remove(0);
                     }
@@ -114,7 +116,7 @@ public class GameClient extends JFrame {
                     gamePanel.repaint();
                 });
             }
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
     }
@@ -123,7 +125,7 @@ public class GameClient extends JFrame {
     private void receiveUDPMessage() {
         byte[] receiveData = new byte[BUFSIZE];
         try {
-            while (true) {
+            while(true) {
                 DatagramPacket receivePacket = new DatagramPacket(receiveData, receiveData.length);
                 udpSocket.receive(receivePacket);
                 String msg = new String(receivePacket.getData(), 0, receivePacket.getLength()).trim();
@@ -140,17 +142,30 @@ public class GameClient extends JFrame {
             byte[] sendData = movement.getBytes();
             DatagramPacket sendPacket = new DatagramPacket(sendData, sendData.length, serverAddress, UDP_MOVEMENT_PORT);
             udpSocket.send(sendPacket);
-        } catch (IOException e) {
+        } catch(IOException e) {
             e.printStackTrace();
         }
     }
 
     // 處理伺服器訊息
     private void processMsg(String msg) {
-        if (msg.startsWith("STATE:")) {
+        if (msg.startsWith("MAP:")) {
+            System.out.println("hi");
+            int mapIndex = Integer.parseInt(msg.substring(4));
+            gameState.setMapIndex(mapIndex); // 根據地圖索引設置遊戲狀態
+            System.out.println("Client received map index: " + mapIndex);
+        } if(msg.startsWith("STATE:")) {
             String[] splits = msg.substring(6).split(";");
-            for (String split : splits) {
-                if (!split.isEmpty()) {
+            for(String split : splits) {
+                if(!split.isEmpty()) {
+                    // String[] playerInfo = split.split(",");
+                    // int id = Integer.parseInt(playerInfo[0]);
+                    // double x = Double.parseDouble(playerInfo[1]);
+                    // double y = Double.parseDouble(playerInfo[2]);
+                    // Color color = new Color(Integer.parseInt(playerInfo[3]));
+                    // double vX = Double.parseDouble(playerInfo[4]);
+                    // double vY = Double.parseDouble(playerInfo[5]);
+                    // boolean isAlive = Boolean.parseBoolean(playerInfo[6]);
                     String[] playerInfo = split.split(",");
                     int id = Integer.parseInt(playerInfo[0]);
                     double x = Double.parseDouble(playerInfo[1]);
@@ -159,28 +174,46 @@ public class GameClient extends JFrame {
                     double vX = Double.parseDouble(playerInfo[4]);
                     double vY = Double.parseDouble(playerInfo[5]);
                     boolean isAlive = Boolean.parseBoolean(playerInfo[6]);
+                    int score = Integer.parseInt(playerInfo[7]);
 
-                    if (!gameState.getPlayers().containsKey(id)) {
+                    if(!gameState.getPlayers().containsKey(id)) {
                         gameState.addPlayer(id);
                     }
                     gameState.updatePlayer(id, x, y, color, vX, vY, isAlive);
+                    playerScores.put(id, score); // 更新分數
                 }
             }
             gamePanel.repaint();
-        } else if (msg.startsWith("new_player:")) {
+        } else if(msg.startsWith("new_player:")) {
             int id = Integer.parseInt(msg.substring(11));
-            if (clientId == -1) {
+            if(clientId == -1) {
                 clientId = id;
             }
             if(playerId == -1){
                 playerId = id;
             }
-            if (!gameState.getPlayers().containsKey(id)) {
+            if(!gameState.getPlayers().containsKey(id)) {
                 gameState.addPlayer(id);
             }
-        } else if (msg.startsWith("PLAYERREMOVE:")) {
+        } else if(msg.startsWith("PLAYERREMOVE:")) {
             int id = Integer.parseInt(msg.substring(13));
             gameState.removePlayer(id);
+        } else if (msg.startsWith("GAME_OVER:")) {
+            int winnerId = Integer.parseInt(msg.substring(10));
+            int score = 3;
+            playerScores.put(winnerId, score);
+            gamePanel.repaint();
+            JOptionPane.showMessageDialog(this, "Game Over! Winner: Player " + winnerId);
+            System.exit(0);
+        } else if (msg.startsWith("GAME_OVER_MULTIPLE:")) {
+            // 結束前畫出最終分數
+            int winnerId = Integer.parseInt(msg.substring(19));
+            int score = 3;
+            playerScores.put(winnerId, score);
+            gamePanel.repaint();
+            String[] winnerIds = msg.substring(19).split(",");
+            JOptionPane.showMessageDialog(this, "Game Over! Winners: " + String.join(", ", winnerIds));
+            System.exit(0);
         }
     }
 
@@ -191,6 +224,17 @@ public class GameClient extends JFrame {
             super.paintComponent(g);
             gameState.draw(g);
             drawChat(g);
+            drawScores(g);
+        }
+
+        private void drawScores(Graphics g) {
+            g.setColor(Color.WHITE);
+            g.setFont(new Font("Arial", Font.BOLD, 18));
+            int y = 20;
+            for(Map.Entry<Integer, Integer> entry : playerScores.entrySet()) {
+                g.drawString("Player " + entry.getKey() + " Score: " + entry.getValue(), 10, y);
+                y += 20;
+            }
         }
 
         private void drawChat(Graphics g) {
@@ -215,7 +259,7 @@ public class GameClient extends JFrame {
             int textY = chatY + 40; // 第一行文字的起始 Y 座標
             int lineHeight = 15; // 每行文字的高度
         
-            synchronized (chatMessages) {
+            synchronized(chatMessages) {
                 for (String msg : chatMessages) {
                     if(!msg.isEmpty()){
                        
