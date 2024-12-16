@@ -2,6 +2,7 @@ import java.io.*;
 import java.net.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GameServer {
@@ -17,14 +18,16 @@ public class GameServer {
     private int nextId = 1;
     private ConcurrentHashMap<Integer, ChattingRoomHandler> chatClients = new ConcurrentHashMap<>();// 聊天室的client
     private static final int WINNING_SCORE = 3;
-    // private static final Random random = new Random();
-    // private static final int mapindex = random.nextInt(2)+1;
+    private static final Random random = new Random();
+    private static final int mapIndex = random.nextInt(2)+1;
 
 
     public GameServer() {
         try {
             // System.out.println(mapindex);
             // gameState.setmapindex(mapindex);
+            System.out.println("Selected Map Index: " + mapIndex);
+            gameState.setMapIndex(mapIndex);
             InetAddress serverAddress = InetAddress.getByName(SERVER_IP);
             // udpConnectionSocket = new DatagramSocket(UDP_CONNECTION_PORT);
             udpConnectionSocket = new DatagramSocket(new InetSocketAddress(serverAddress, UDP_CONNECTION_PORT));
@@ -57,9 +60,14 @@ public class GameServer {
                 ClientHandler client = new ClientHandler(ClientId, clientAddress, clientPort, this, udpConnectionSocket);
                 clients.put(ClientId, client);
 
+                String mapChoice = "MAP:" + mapIndex;
+                client.sendMsg(mapChoice);
+                
                 // 送給新client所有玩家資訊，不然新家進來的看不到其他玩家
                 String welcomeMsg = "new_player:" + ClientId;
                 client.sendMsg(welcomeMsg);
+
+               
 
                 // 新增玩家
                 gameState.addPlayer(ClientId);

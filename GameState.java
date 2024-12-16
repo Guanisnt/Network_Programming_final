@@ -19,10 +19,14 @@ public class GameState extends Frame{
     private List<Rectangle> deathRegion = new ArrayList<>(); 
     public static List<Point> bornPoint = new ArrayList<>();
     private List<Point> WordPos = new ArrayList<>();
-    // private int mapindex=1;
+    private int mapIndex;
 
-    public GameState(){
-        map.getMap(2);
+    // public GameState(){
+    // }
+
+    public void setMapIndex(int index) {
+        this.mapIndex = index;
+        map.getMap(index);
         platforms = map.getplatforms();
         bornPoint = map.getbornPoint();
         deathRegion = map.getdeathRegion();

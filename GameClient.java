@@ -149,7 +149,12 @@ public class GameClient extends JFrame {
 
     // 處理伺服器訊息
     private void processMsg(String msg) {
-        if(msg.startsWith("STATE:")) {
+        if (msg.startsWith("MAP:")) {
+            System.out.println("hi");
+            int mapIndex = Integer.parseInt(msg.substring(4));
+            gameState.setMapIndex(mapIndex); // 根據地圖索引設置遊戲狀態
+            System.out.println("Client received map index: " + mapIndex);
+        } if(msg.startsWith("STATE:")) {
             String[] splits = msg.substring(6).split(";");
             for(String split : splits) {
                 if(!split.isEmpty()) {
