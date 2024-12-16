@@ -1,10 +1,10 @@
-import javax.swing.*;
 import java.awt.*;
 import java.awt.event.*;
 import java.io.*;
 import java.net.*;
 import java.util.*;
 import java.util.List;
+import javax.swing.*;
 
 public class GameClient extends JFrame {
     private static final int UDP_CONNECTION_PORT = 12345;

@@ -1,16 +1,21 @@
 /*更新各種遊戲狀態 */
 import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ConcurrentHashMap; // 有多執行續的Map，不用寫synchronized
+import javax.imageio.ImageIO;
 
-public class GameState {
+public class GameState extends Frame{
     
 
     private ConcurrentHashMap<Integer, Sprite> players = new ConcurrentHashMap<>(); // <playerID, sprite>
+    BufferedImage bufferPage=null;
     private List<Rectangle> platforms = new ArrayList<>(); // 地板
     private static final Point[] bornPoint = {
-        new Point(150, 100),
+        new Point(225, 300),
         new Point(600, 100),
         new Point(150, 300),
         new Point(600, 300)
@@ -21,15 +26,22 @@ public class GameState {
         this.initPlatforms();
     }
 
+
     public void initPlatforms() {
-        platforms.add(new Rectangle(100, 500, 1200, 20));
-        platforms.add(new Rectangle(200, 400, 400, 20));
-        platforms.add(new Rectangle(800, 400, 400, 20));
+        platforms.add(new Rectangle(150, 385, 200, 300));
+        platforms.add(new Rectangle(150, 0, 200, 225));
+
+        platforms.add(new Rectangle(450, 500, 500, 50));
+        platforms.add(new Rectangle(450, 200, 500, 50));
+
+        platforms.add(new Rectangle(1050, 410, 200, 275));
+        platforms.add(new Rectangle(1050, 0, 200, 250));
     }
 
     // 新增玩家
     public void addPlayer(int id) {
-        Sprite player = new Sprite(id, bornPoint[id%4].x, bornPoint[id%4].y);  // 用id來決定出生點
+        Sprite player = new Sprite(id, bornPoint[0].x, bornPoint[0].y);  // 用id來決定出生點
+        System.out.println(bornPoint[id%4].x+" "+bornPoint[id%4].y);
         players.put(id, player);
     }
 
@@ -57,22 +69,68 @@ public class GameState {
         }
     }
 
-    // 畫所有東西，我都先用內建的畫，之後要套圖片
+    // 畫所有東西
     public void draw(Graphics g) {
+        Graphics bufferg;
+        if(bufferPage == null)
+            bufferPage = new BufferedImage(1440, 720, BufferedImage.TYPE_INT_ARGB);
+        bufferg = bufferPage.getGraphics();
+        BufferedImage bg;
         // 畫背景
-        g.setColor(new Color(135, 206, 235)); // Sky blue
-        g.fillRect(0, 0, 1440, 720);
-
-        // 畫地板
-        g.setColor(Color.GREEN);
-        for(Rectangle platform : platforms) {
-            g.fillRect(platform.x, platform.y, platform.width, platform.height);
+        try {
+            // 讀取 JPG 檔案
+            bg = ImageIO.read(new File("map1/background.jpg"));
+            bufferg.drawImage(bg, 0,0,1440,720, this);
+        } catch (IOException e) {
+            e.printStackTrace();
+            System.out.println("無法讀取圖片檔案！");
         }
         
+        BufferedImage floor;
+        // 畫地板
+        try{
+            floor = ImageIO.read(new File("map1/floor.png"));
+            bufferg.drawImage(floor,150 ,385,200,300 ,this);
+            bufferg.drawImage(floor,150 ,0,200,225 ,this);
+
+            bufferg.drawImage(floor,450 ,500,500,50 ,this);
+            bufferg.drawImage(floor,450 ,200,500,50 ,this);
+
+            bufferg.drawImage(floor,1050 ,410,200,275 ,this);
+            bufferg.drawImage(floor,1050 ,0,200,250 ,this);
+        }catch(IOException e) {
+            e.printStackTrace();
+            System.out.println("無法讀取圖片檔案！");
+        }
+
         // 畫玩家
         for(Sprite player : players.values()) {
-            player.draw(g);
+            if(player.isAlive()){
+                BufferedImage plr;
+                try {
+                    System.out.println(player.getX()+" "+player.getY());
+                    // 讀取 JPG 檔案
+                    plr = ImageIO.read(new File("plr/plr1.png"));
+                    bufferg.drawImage(plr,(int)player.getX(),(int)player.getY(),30,30,this);
+                } catch (IOException e) {
+                    e.printStackTrace();
+                    System.out.println("無法讀取圖片檔案！");
+                }
+            }
         }
+
+        // BufferedImage plr;
+        // try {
+        //     // 讀取 JPG 檔案
+        //     plr = ImageIO.read(new File("plr/plr1.png"));
+        //     bufferg.drawImage(plr,550,300,50,50,this);
+        // } catch (IOException e) {
+        //     e.printStackTrace();
+        //     System.out.println("無法讀取圖片檔案！");
+        // }
+
+        bufferg.dispose();
+        g.drawImage(bufferPage, getInsets().left, getInsets().top, this);
     }
 
     public ConcurrentHashMap<Integer, Sprite> getPlayers() {return players;} // server要用

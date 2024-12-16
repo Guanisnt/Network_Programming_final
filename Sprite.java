@@ -2,7 +2,7 @@
 import java.awt.*;
 import java.util.List;
 
-public class Sprite {
+public class Sprite{
     private double x, y; // 座標
     private double vX, vY; // 速度 
     private static final double GRAVITY = 0.6; // 重力
@@ -44,22 +44,40 @@ public class Sprite {
         // 檢查碰到地板
         isOnGround = false;
         Rectangle bounds = new Rectangle((int)x, (int)y, BALL_SIZE, BALL_SIZE); // 球的範圍，hitbox的概念
-        for(Rectangle platform : platforms) { // 檢查每個地板
-            if(bounds.intersects(platform)) { // 如果球在地板上方
-                if(vY > 0) {
-                    y = platform.y - BALL_SIZE; // 球的底部和地板的頂部對齊
-                    vY = 0;
-                    isOnGround = true;
-                }
-            }
-        }
-        // 球不能穿過flatform
-        for(Rectangle platform : platforms) {
-            if(bounds.intersects(platform)) {
-                if(vY < 0) {
-                    if(y + BALL_SIZE > platform.y && y < platform.y) {
+
+        //檢查玩家與platform的彈性碰撞
+        for(Rectangle platform: platforms){
+            if(bounds.intersects(platform)){
+                double overlapX = Math.min(
+                    x + BALL_SIZE - platform.x,   // 玩家右邊到平台左邊
+                    platform.x + platform.width - x // 平台右邊到玩家左邊
+                );
+                double overlapY = Math.min(
+                    y + BALL_SIZE - platform.y, // 玩家底部到平台頂部
+                    platform.y + platform.height - y // 平台底部到玩家頂部
+                );
+                double angle = Math.atan2(overlapY, overlapX);
+                if(overlapX < overlapY){
+                    if (x < platform.x) {
+                        x = platform.x - BALL_SIZE;
+                        vX = -Math.cos(angle) * vX;
+                        System.out.println("玩家撞到平台的左邊");
+                    } else {
+                        x = platform.x + platform.width;
+                        vX = Math.cos(angle) * vX;
+                        System.out.println("玩家撞到平台的右邊");
+                    }
+                    
+                }else{
+                    if (y < platform.y) {
+                        y = platform.y - BALL_SIZE; // 球的底部和地板的頂部對齊
+                        vY = -Math.sin(angle) * vY;
+                        isOnGround = true;
+                        System.out.println("玩家站到平台上");
+                    } else {
                         y = platform.y + platform.height; // y是往下增加的所以用+
-                        vY = 0;
+                        vY = Math.sin(angle) * vY;
+                        System.out.println("玩家撞到平台下面");
                     }
                 }
             }
@@ -107,11 +125,19 @@ public class Sprite {
         vY = GRAVITY + 0.5;
     }
 
-    public void draw(Graphics g) {
-        if(!isAlive) return;
-        g.setColor(color);
-        g.fillOval((int)x, (int)y, BALL_SIZE, BALL_SIZE);
-    }
+    // public void draw(Graphics g) {
+    //     if(!isAlive) return;
+    //     BufferedImage plr;
+    //     try {
+    //         System.out.println(x+" "+y);
+    //         // 讀取 JPG 檔案
+    //         plr = ImageIO.read(new File("plr/plr1.png"));
+    //         g.drawImage(plr,(int)x,(int)y,40,40,this);
+    //     } catch (IOException e) {
+    //         e.printStackTrace();
+    //         System.out.println("無法讀取圖片檔案！");
+    //     }
+    // }
 
     public double getX() {return x;}
     public double getY() {return y;}
