@@ -17,10 +17,14 @@ public class GameServer {
     private int nextId = 1;
     private ConcurrentHashMap<Integer, ChattingRoomHandler> chatClients = new ConcurrentHashMap<>();// 聊天室的client
     private static final int WINNING_SCORE = 3;
+    // private static final Random random = new Random();
+    // private static final int mapindex = random.nextInt(2)+1;
 
 
     public GameServer() {
         try {
+            // System.out.println(mapindex);
+            // gameState.setmapindex(mapindex);
             InetAddress serverAddress = InetAddress.getByName(SERVER_IP);
             // udpConnectionSocket = new DatagramSocket(UDP_CONNECTION_PORT);
             udpConnectionSocket = new DatagramSocket(new InetSocketAddress(serverAddress, UDP_CONNECTION_PORT));
@@ -233,7 +237,7 @@ public class GameServer {
     private void resetPlayer(int playerId) { // 重置玩家
         Sprite player = gameState.getPlayers().get(playerId);
         if (player != null) {
-            player.setPosition(GameState.bornPoint[playerId % GameState.bornPoint.length].x, GameState.bornPoint[playerId % GameState.bornPoint.length].y);
+            player.setPosition(GameState.bornPoint.get(playerId % GameState.bornPoint.size()).x, GameState.bornPoint.get(playerId % GameState.bornPoint.size()).y);
             player.setAlive(true);
             player.setVelocity(0, 0);
         }

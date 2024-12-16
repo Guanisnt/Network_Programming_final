@@ -5,7 +5,7 @@ import java.util.List;
 public class Sprite{
     private double x, y; // 座標
     private double vX, vY; // 速度 
-    private static final double GRAVITY = 0.9; // 重力
+    private static final double GRAVITY = 0.98; // 重力
     private static final double MOVE_SPEED = 6.5; // 移動速度
     private static final double JUMP_FORCE = -18; // 跳躍力
     private static final double FRICTION = 0.98; // 速度每次減少2%
@@ -29,7 +29,7 @@ public class Sprite{
     }
 
     // 更新玩家資訊和地圖
-    public void update(List<Rectangle> platforms, List<Sprite> otherPlayers) {
+    public void update(List<Rectangle> platforms,List<Rectangle> deathRegion, List<Sprite> otherPlayers) {
         if(!isAlive) return;  // 死了
         // 球一直保持往下掉
         vY += GRAVITY;
@@ -85,6 +85,12 @@ public class Sprite{
             }
         }
 
+        for(Rectangle death:deathRegion){
+            if(bounds.intersects(death)){
+                isAlive=false;
+            }
+        }
+
         // 檢查撞到其他玩家
         for(Sprite otherPlayer : otherPlayers) {
             if(otherPlayer != this && otherPlayer.isAlive) { // 如果不是自己
@@ -105,7 +111,7 @@ public class Sprite{
         }
 
         // 檢查邊界
-        if(y > 740 || y < 0 || x < -30 || x > 1470) {
+        if(y > 720 || y < -100 || x < -100 || x > 1500) {
             isAlive = false;
         }
     }

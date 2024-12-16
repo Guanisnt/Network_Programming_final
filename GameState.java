@@ -5,43 +5,34 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.ConcurrentHashMap; // 有多執行續的Map，不用寫synchronized
-import javax.imageio.ImageIO;
+import java.util.concurrent.ConcurrentHashMap;
+import javax.imageio.ImageIO; // 有多執行續的Map，不用寫synchronized
 
 public class GameState extends Frame{
     
 
     private ConcurrentHashMap<Integer, Sprite> players = new ConcurrentHashMap<>(); // <playerID, sprite>
-    BufferedImage bufferPage=null;
-    private List<Rectangle> platforms = new ArrayList<>(); // 地板
-    public static final Point[] bornPoint = {
-        new Point(225, 300),
-        new Point(1125, 350),
-        new Point(680, 400),
-        new Point(680, 150)
-    };
+    BufferedImage bufferPage=null;// 地板
 
-    public GameState() {
-        // 初始化地板，之後畫地圖也可以用
-        this.initPlatforms();
-    }
+    private GameMap map = new GameMap(); 
+    private List<Rectangle> platforms = new ArrayList<>();
+    private List<Rectangle> deathRegion = new ArrayList<>(); 
+    public static List<Point> bornPoint = new ArrayList<>();
+    private List<Point> WordPos = new ArrayList<>();
+    // private int mapindex=1;
 
-
-    public void initPlatforms() {
-        platforms.add(new Rectangle(150, 385, 200, 300));
-        platforms.add(new Rectangle(150, 0, 200, 225));
-
-        platforms.add(new Rectangle(450, 500, 500, 50));
-        platforms.add(new Rectangle(450, 300, 500, 50));
-
-        platforms.add(new Rectangle(1050, 410, 200, 275));
-        platforms.add(new Rectangle(1050, 0, 200, 250));
+    public GameState(){
+        map.getMap(2);
+        platforms = map.getplatforms();
+        bornPoint = map.getbornPoint();
+        deathRegion = map.getdeathRegion();
+        WordPos = map.getWordPos();
     }
 
     // 新增玩家
     public void addPlayer(int id) {
-        Sprite player = new Sprite(id, bornPoint[id%4].x, bornPoint[id%4].y);  // 用id來決定出生點
-        System.out.println(bornPoint[id%4].x+" "+bornPoint[id%4].y);
+        Sprite player = new Sprite(id, bornPoint.get(id%bornPoint.size()).x, bornPoint.get(id%bornPoint.size()).y);  // 用id來決定出生點
+        // System.out.println(bornPoint[id%4].x+" "+bornPoint[id%4].y);
         players.put(id, player);
     }
 
@@ -65,7 +56,7 @@ public class GameState extends Frame{
     public void update() {
         List<Sprite> playerList = new ArrayList<>(players.values()); // copy玩家清單
         for(Sprite player : playerList) {
-            player.update(platforms, playerList); // call Sprite的update來用
+            player.update(platforms, deathRegion, playerList); // call Sprite的update來用
         }
     }
 
@@ -75,33 +66,27 @@ public class GameState extends Frame{
         if(bufferPage == null)
             bufferPage = new BufferedImage(1440, 720, BufferedImage.TYPE_INT_ARGB);
         bufferg = bufferPage.getGraphics();
-        BufferedImage bg;
-        // 畫背景
-        try {
-            // 讀取 JPG 檔案
-            bg = ImageIO.read(new File("map1/background.jpg"));
-            bufferg.drawImage(bg, 0,0,1440,720, this);
-        } catch (IOException e) {
-            e.printStackTrace();
-            System.out.println("無法讀取圖片檔案！");
+
+        bufferg.setColor(map.getbgColor());
+        bufferg.fillRect(0, 0, 1440, 720);
+        // 畫地圖
+        for (Rectangle p : platforms){
+            bufferg.setColor(new Color(0,0,0,100));
+            bufferg.fillRect(p.x-2, p.y-2, p.width+4, p.height+4);
+            bufferg.setColor(map.getplatformColor());
+            bufferg.fillRect(p.x, p.y, p.width, p.height);
         }
         
-        BufferedImage floor;
-        // 畫地板
-        try{
-            floor = ImageIO.read(new File("map1/floor.png"));
-            bufferg.drawImage(floor,150 ,385,200,300 ,this);
-            bufferg.drawImage(floor,150 ,0,200,225 ,this);
-
-            bufferg.drawImage(floor,450 ,500,500,50 ,this);
-            bufferg.drawImage(floor,450 ,300,500,50 ,this);
-
-            bufferg.drawImage(floor,1050 ,410,200,275 ,this);
-            bufferg.drawImage(floor,1050 ,0,200,250 ,this);
-        }catch(IOException e) {
-            e.printStackTrace();
-            System.out.println("無法讀取圖片檔案！");
+        for (Rectangle d : deathRegion){
+            bufferg.setColor(Color.black);
+            bufferg.fillRect(d.x, d.y, d.width, d.height);
         }
+
+        bufferg.setColor(map.getwordColor());
+        bufferg.setFont(new Font("Arial", Font.BOLD, 100));
+        bufferg.drawString("Java", WordPos.get(0).x, WordPos.get(0).y);
+        bufferg.setFont(new Font("Arial", Font.BOLD, 65));
+        bufferg.drawString("Network Programming", WordPos.get(1).x, WordPos.get(1).y);
 
         // 畫玩家
         for(Sprite player : players.values()) {
@@ -121,21 +106,12 @@ public class GameState extends Frame{
             }
         }
 
-        // BufferedImage plr;
-        // try {
-        //     // 讀取 JPG 檔案
-        //     plr = ImageIO.read(new File("plr/plr1.png"));
-        //     bufferg.drawImage(plr,550,300,50,50,this);
-        // } catch (IOException e) {
-        //     e.printStackTrace();
-        //     System.out.println("無法讀取圖片檔案！");
-        // }
-
         bufferg.dispose();
         g.drawImage(bufferPage, getInsets().left, getInsets().top, this);
     }
 
     public ConcurrentHashMap<Integer, Sprite> getPlayers() {return players;} // server要用
+    // public void setmapindex(int x){ mapindex=x; }
 
     
 }
