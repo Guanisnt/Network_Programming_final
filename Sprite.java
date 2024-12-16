@@ -5,10 +5,11 @@ import java.util.List;
 public class Sprite{
     private double x, y; // 座標
     private double vX, vY; // 速度 
-    private static final double GRAVITY = 0.6; // 重力
-    private static final double MOVE_SPEED = 4; // 移動速度
-    private static final double JUMP_FORCE = -15; // 跳躍力
+    private static final double GRAVITY = 0.98; // 重力
+    private static final double MOVE_SPEED = 6.5; // 移動速度
+    private static final double JUMP_FORCE = -18; // 跳躍力
     private static final double FRICTION = 0.98; // 速度每次減少2%
+    private int jumpTimes = 0; // 跳躍次數
     private int id; // 玩家id
     private boolean isAlive = true; 
     private boolean isOnGround = false;
@@ -61,23 +62,24 @@ public class Sprite{
                     if (x < platform.x) {
                         x = platform.x - BALL_SIZE;
                         vX = -Math.cos(angle) * vX;
-                        System.out.println("玩家撞到平台的左邊");
+                        // System.out.println("玩家撞到平台的左邊");
                     } else {
                         x = platform.x + platform.width;
                         vX = Math.cos(angle) * vX;
-                        System.out.println("玩家撞到平台的右邊");
+                        // System.out.println("玩家撞到平台的右邊");
                     }
                     
                 }else{
-                    if (y < platform.y) {
+                    if (y < platform.y+10) {
                         y = platform.y - BALL_SIZE; // 球的底部和地板的頂部對齊
                         vY = -Math.sin(angle) * vY;
                         isOnGround = true;
-                        System.out.println("玩家站到平台上");
+                        jumpTimes = 0;
+                        // System.out.println("玩家站到平台上");
                     } else {
                         y = platform.y + platform.height; // y是往下增加的所以用+
                         vY = Math.sin(angle) * vY;
-                        System.out.println("玩家撞到平台下面");
+                        // System.out.println("玩家撞到平台下面");
                     }
                 }
             }
@@ -117,7 +119,9 @@ public class Sprite{
     }
 
     public void jump() {
-        if(!isOnGround) return;
+        if(jumpTimes >= 2) return;
+        // if(!isOnGround) return;
+        jumpTimes++;
         vY = JUMP_FORCE;
     }
 

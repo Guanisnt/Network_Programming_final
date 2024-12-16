@@ -32,7 +32,7 @@ public class GameState extends Frame{
         platforms.add(new Rectangle(150, 0, 200, 225));
 
         platforms.add(new Rectangle(450, 500, 500, 50));
-        platforms.add(new Rectangle(450, 200, 500, 50));
+        platforms.add(new Rectangle(450, 300, 500, 50));
 
         platforms.add(new Rectangle(1050, 410, 200, 275));
         platforms.add(new Rectangle(1050, 0, 200, 250));
@@ -94,7 +94,7 @@ public class GameState extends Frame{
             bufferg.drawImage(floor,150 ,0,200,225 ,this);
 
             bufferg.drawImage(floor,450 ,500,500,50 ,this);
-            bufferg.drawImage(floor,450 ,200,500,50 ,this);
+            bufferg.drawImage(floor,450 ,300,500,50 ,this);
 
             bufferg.drawImage(floor,1050 ,410,200,275 ,this);
             bufferg.drawImage(floor,1050 ,0,200,250 ,this);
@@ -108,11 +108,12 @@ public class GameState extends Frame{
             if(player.isAlive()){
                 BufferedImage plr;
                 try {
-                    System.out.println(player.getX()+" "+player.getY());
+                    // System.out.println(player.getX()+" "+player.getY());
                     // 讀取 JPG 檔案
                     String path = "plr/plr"+String.valueOf(player.getId()%4+1)+".png";
                     plr = ImageIO.read(new File(path));
-                    bufferg.drawImage(plr,(int)player.getX(),(int)player.getY(),30,30,this);
+                    Image scaledPlr = plr.getScaledInstance(30, 30, Image.SCALE_SMOOTH); // 把求變平滑
+                    bufferg.drawImage(scaledPlr,(int)player.getX(),(int)player.getY(),30,30,this);
                 } catch (IOException e) {
                     e.printStackTrace();
                     System.out.println("無法讀取圖片檔案！");

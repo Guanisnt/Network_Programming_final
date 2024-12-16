@@ -205,9 +205,9 @@ public class GameServer {
         Sprite player = gameState.getPlayers().get(clientId);
         if(player != null && player.isAlive()) {
             switch(input) {
+                case "JUMP": player.jump(); break;
                 case "LEFT": player.moveLeft(); break;
                 case "RIGHT": player.moveRight(); break;
-                case "JUMP": player.jump(); break;
                 case "IncG": player.increaseGravity(); break;
             }
         }
