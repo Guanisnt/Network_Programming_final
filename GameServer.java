@@ -5,6 +5,7 @@ import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GameServer {
+    private static final String SERVER_IP = "localhost";
     private static final int UDP_CONNECTION_PORT = 12345;
     private static final int UDP_MOVEMENT_PORT = 124;
     private DatagramSocket udpConnectionSocket; // 用來接收client連線
@@ -20,7 +21,10 @@ public class GameServer {
 
     public GameServer() {
         try {
-            udpConnectionSocket = new DatagramSocket(UDP_CONNECTION_PORT);
+            InetAddress serverAddress = InetAddress.getByName(SERVER_IP);
+            // udpConnectionSocket = new DatagramSocket(UDP_CONNECTION_PORT);
+            udpConnectionSocket = new DatagramSocket(new InetSocketAddress(serverAddress, UDP_CONNECTION_PORT));
+            System.out.println("Server started on IP " + SERVER_IP + " and port " + UDP_CONNECTION_PORT);
             udpMovementSocket = new DatagramSocket(UDP_MOVEMENT_PORT);
             System.out.println("Server started on port " + UDP_CONNECTION_PORT);
             System.out.println("waiting for client to connect...");

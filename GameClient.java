@@ -7,6 +7,7 @@ import java.util.List;
 import javax.swing.*;
 
 public class GameClient extends JFrame {
+    private static final String SERVER_IP = "localhost";
     private static final int UDP_CONNECTION_PORT = 12345;
     private static final int UDP_MOVEMENT_PORT = 124;
     private static final int BUFSIZE = 1024;
@@ -38,7 +39,7 @@ public class GameClient extends JFrame {
 
         try {
             // 設置 TCP 和 UDP 連線
-            serverAddress = InetAddress.getByName("localhost");
+            serverAddress = InetAddress.getByName(SERVER_IP);
             tcpSocket = new Socket(serverAddress, 12346);
             tcpWriter = new BufferedWriter(new OutputStreamWriter(tcpSocket.getOutputStream()));
             tcpReader = new BufferedReader(new InputStreamReader(tcpSocket.getInputStream()));
