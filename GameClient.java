@@ -193,10 +193,13 @@ public class GameClient extends JFrame {
             int id = Integer.parseInt(msg.substring(13));
             gameState.removePlayer(id);
         } else if (msg.startsWith("GAME_OVER:")) {
+            gamePanel.repaint();
             int winnerId = Integer.parseInt(msg.substring(10));
             JOptionPane.showMessageDialog(this, "Game Over! Winner: Player " + winnerId);
             System.exit(0);
         } else if (msg.startsWith("GAME_OVER_MULTIPLE:")) {
+            // 結束前畫出最終分數
+            gamePanel.repaint();
             String[] winnerIds = msg.substring(19).split(",");
             JOptionPane.showMessageDialog(this, "Game Over! Winners: " + String.join(", ", winnerIds));
             System.exit(0);
@@ -265,28 +268,95 @@ public class GameClient extends JFrame {
 
     public static void main(String[] args) {
         // UI
-        JFrame startWindow = new JFrame("Start Game");
+        JFrame startWindow = new JFrame("GameBall");
         startWindow.setSize(1440, 720);
         startWindow.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         startWindow.setLayout(new BorderLayout());
 
-        JLabel welcomeLabel = new JLabel("Welcome to the Game!", SwingConstants.CENTER);
-        JButton startButton = new JButton("Start Game");
-    
-        startWindow.add(welcomeLabel, BorderLayout.CENTER);
-        startWindow.add(startButton, BorderLayout.SOUTH);
-    
-        // 按鈕點擊事件
-        startButton.addActionListener(e -> {
-            // 如果按下開始
-            SwingUtilities.invokeLater(() -> {
-                GameClient client = new GameClient(); // 開始，new 一個 GameClient
-                client.setVisible(true);
-            });
-            startWindow.dispose(); // 把UI關掉
+        // 設置背景面板
+        JPanel backgroundPanel = new JPanel() {
+            @Override
+            protected void paintComponent(Graphics g) {
+                super.paintComponent(g);
+                // 畫深色背景與網格線
+                g.setColor(new Color(30, 30, 30)); // 深灰色背景
+                g.fillRect(0, 0, getWidth(), getHeight());
+                g.setColor(new Color(70, 70, 70)); // 深灰網格線
+                for (int i = 0; i < getWidth(); i += 50) {
+                    g.drawLine(i, 0, i, getHeight());
+                }
+                for (int j = 0; j < getHeight(); j += 50) {
+                    g.drawLine(0, j, getWidth(), j);
+                }
+            }
+        };
+        backgroundPanel.setLayout(new BorderLayout());
+
+        // 遊戲名稱標題
+        JLabel gameTitle = new JLabel("GAMEBALL", SwingConstants.CENTER);
+        gameTitle.setFont(new Font("Arial", Font.BOLD, 60));
+        gameTitle.setForeground(new Color(180, 180, 180)); // 淡灰色
+        gameTitle.setBorder(BorderFactory.createEmptyBorder(180, 0, 80, 0));
+
+        // 開始按鈕
+        JButton startButton = new JButton("START GAME");
+        startButton.setFont(new Font("Arial", Font.BOLD, 24));
+        startButton.setBackground(new Color(50, 50, 50)); // 深灰色背景
+        startButton.setForeground(new Color(200, 200, 200)); // 淡灰文字
+        startButton.setFocusPainted(false);
+        startButton.setBorder(BorderFactory.createLineBorder(new Color(100, 100, 100), 3)); // 中灰邊框
+        startButton.setPreferredSize(new Dimension(200, 50));   // 設定按鈕大小
+
+        // 加入滑鼠懸停效果
+        startButton.addMouseListener(new java.awt.event.MouseAdapter() {
+            @Override
+            public void mouseEntered(java.awt.event.MouseEvent evt) {
+                startButton.setBackground(new Color(70, 70, 70)); // 滑鼠移入變淺灰
+            }
+
+            @Override
+            public void mouseExited(java.awt.event.MouseEvent evt) {
+                startButton.setBackground(new Color(50, 50, 50)); // 滑鼠移出恢復
+            }
         });
 
-        startWindow.setLocationRelativeTo(null); // 置中
+        // 按鈕點擊事件
+        startButton.addActionListener(e -> {
+            SwingUtilities.invokeLater(() -> {
+                GameClient client = new GameClient(); // 啟動遊戲客戶端
+                client.setVisible(true);
+            });
+            startWindow.dispose(); // 關閉開始畫面
+        });
+
+        // 遊戲規則
+        JLabel rulesLabel = new JLabel(
+            "<html><div style='text-align: center; color: #CCCCCC; font-size: 18px;'>" // 暗灰字體
+            + "<p><strong>遊戲規則:</strong></p>"
+            + "<p>1. 控制角色跳躍與移動，存活到最後。</p>"
+            + "<p>2. 按下上鍵可以跳躍，左右鍵移動方向。</p>"
+            + "<p>3. 連跳技巧是獲勝的關鍵！</p>"
+            + "</div></html>"
+        );
+        rulesLabel.setHorizontalAlignment(SwingConstants.CENTER);
+        rulesLabel.setBorder(BorderFactory.createEmptyBorder(20, 50, 100, 50));
+
+        // 添加元件到背景面板
+        backgroundPanel.add(gameTitle, BorderLayout.NORTH);
+
+        JPanel centerPanel = new JPanel();
+        centerPanel.setOpaque(false); // 透明背景
+        centerPanel.add(startButton);
+        backgroundPanel.add(centerPanel, BorderLayout.CENTER);
+
+        JPanel bottomPanel = new JPanel();
+        bottomPanel.setOpaque(false); // 透明背景
+        bottomPanel.add(rulesLabel);
+        backgroundPanel.add(bottomPanel, BorderLayout.SOUTH);
+
+        // 加入背景面板到視窗
+        startWindow.add(backgroundPanel);
+        startWindow.setLocationRelativeTo(null);
         startWindow.setVisible(true);
     }
 }

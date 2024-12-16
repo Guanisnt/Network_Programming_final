@@ -217,14 +217,14 @@ public class GameServer {
         resetGame(); // 重置遊戲
     }
 
-    private int getOpponentId(int playerId) { // 找對手的id
-        for(Integer id : gameState.getPlayers().keySet()) {
-            if(id != playerId) {
-                return id;
-            }
-        }
-        return -1;
-    }
+    // private int getOpponentId(int playerId) { // 找對手的id
+    //     for(Integer id : gameState.getPlayers().keySet()) {
+    //         if(id != playerId) {
+    //             return id;
+    //         }
+    //     }
+    //     return -1;
+    // }
 
     private void resetPlayer(int playerId) { // 重置玩家
         Sprite player = gameState.getPlayers().get(playerId);
