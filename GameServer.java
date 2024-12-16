@@ -13,6 +13,7 @@ public class GameServer {
     private GameState gameState = new GameState();
     private int nextId = 1;
     private ConcurrentHashMap<Integer, ChattingRoomHandler> chatClients = new ConcurrentHashMap<>();// 聊天室的client
+    private static final int WINNING_SCORE = 3;
 
 
     public GameServer() {
@@ -176,24 +177,27 @@ public class GameServer {
     }
 
     private void checkScores() {
-        for(Sprite player : gameState.getPlayers().values()) { // <id, sprite>，檢查每個玩家
-            if(!player.isAlive()) { // 死了
+        for (Sprite player : gameState.getPlayers().values()) {
+            if (!player.isAlive()) {
                 int playerId = player.getId();
-                int opponentId = getOpponentId(playerId); // 對手id
-                if(opponentId != -1) {
-                    playerScores.put(opponentId, playerScores.getOrDefault(opponentId, 0) + 1);
-                    broadcastMessage("SCORE_UPDATE:" + playerId + ":" + playerScores.get(playerId) + "," + opponentId + ":" + playerScores.get(opponentId));
-                    System.out.println("Player " + playerId + " scored! Score: " + playerScores.get(playerId));
-                }
+                updateScores(playerId);
+            }
+        }
+    }
 
-                if(playerScores.getOrDefault(opponentId, 0) >= 3) {
+    private void updateScores(int fallenPlayerId) {
+        for (int opponentId : gameState.getPlayers().keySet()) {
+            if (opponentId != fallenPlayerId) {
+                playerScores.put(opponentId, playerScores.getOrDefault(opponentId, 0) + 1);
+                broadcastMessage("SCORE_UPDATE:" + fallenPlayerId + ":" + playerScores.getOrDefault(fallenPlayerId, 0) + "," + opponentId + ":" + playerScores.get(opponentId));
+                if (playerScores.get(opponentId) >= WINNING_SCORE) {
                     broadcastMessage("GAME_OVER:" + opponentId);
                     resetGame();
-                } else {
-                    resetPlayer(playerId);
+                    return;
                 }
             }
         }
+        resetPlayer(fallenPlayerId);
     }
 
     private int getOpponentId(int playerId) { // 找對手的id
@@ -207,8 +211,8 @@ public class GameServer {
 
     private void resetPlayer(int playerId) {
         Sprite player = gameState.getPlayers().get(playerId);
-        if(player != null) {
-            player.setPosition(GameState.bornPoint[playerId % 4].x, GameState.bornPoint[playerId % 4].y);
+        if (player != null) {
+            player.setPosition(GameState.bornPoint[playerId % GameState.bornPoint.length].x, GameState.bornPoint[playerId % GameState.bornPoint.length].y);
             player.setAlive(true);
             player.setVelocity(0, 0);
         }
@@ -250,7 +254,7 @@ public class GameServer {
     // }
     public void broadcastGameState() {
         StringBuilder state = new StringBuilder("STATE:");
-        for(Sprite player : gameState.getPlayers().values()) {
+        for (Sprite player : gameState.getPlayers().values()) {
             state.append(player.getId()).append(",")
                  .append(player.getX()).append(",")
                  .append(player.getY()).append(",")

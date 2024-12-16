@@ -213,7 +213,7 @@ public class GameClient extends JFrame {
             g.setColor(Color.WHITE);
             g.setFont(new Font("Arial", Font.BOLD, 18));
             int y = 20;
-            for (Map.Entry<Integer, Integer> entry : playerScores.entrySet()) {
+            for(Map.Entry<Integer, Integer> entry : playerScores.entrySet()) {
                 g.drawString("Player " + entry.getKey() + " Score: " + entry.getValue(), 10, y);
                 y += 20;
             }
