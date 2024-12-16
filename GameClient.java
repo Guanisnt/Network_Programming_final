@@ -300,9 +300,9 @@ public class GameClient extends JFrame {
         JLabel rulesLabel = new JLabel(
             "<html><div style='text-align: center; color: #CCCCCC; font-size: 18px;'>" // 暗灰字體
             + "<p><strong>遊戲規則:</strong></p>"
-            + "<p>1. 控制角色跳躍與移動，存活到最後。</p>"
-            + "<p>2. 按下上鍵可以跳躍，左右鍵移動方向。</p>"
-            + "<p>3. 連跳技巧是獲勝的關鍵！</p>"
+            + "<p>1. 控制角色跳躍與移動，存活到最後就贏了。</p>"
+            + "<p>2. 按下上鍵可以跳躍，左右鍵移動方向，空白鍵增加重量。</p>"
+            + "<p>3. 享受遊戲!!(提示:連跳是必勝關鍵)</p>"
             + "</div></html>"
         );
         rulesLabel.setHorizontalAlignment(SwingConstants.CENTER);
