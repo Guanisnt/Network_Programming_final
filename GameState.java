@@ -110,7 +110,8 @@ public class GameState extends Frame{
                 try {
                     System.out.println(player.getX()+" "+player.getY());
                     // 讀取 JPG 檔案
-                    plr = ImageIO.read(new File("plr/plr1.png"));
+                    String path = "plr/plr"+String.valueOf(player.getId()%4+1)+".png";
+                    plr = ImageIO.read(new File(path));
                     bufferg.drawImage(plr,(int)player.getX(),(int)player.getY(),30,30,this);
                 } catch (IOException e) {
                     e.printStackTrace();
