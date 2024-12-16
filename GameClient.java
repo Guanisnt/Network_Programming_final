@@ -174,7 +174,7 @@ public class GameClient extends JFrame {
                         gameState.addPlayer(id);
                     }
                     gameState.updatePlayer(id, x, y, color, vX, vY, isAlive);
-                    playerScores.put(id, score);
+                    playerScores.put(id, score); // 更新分數
                 }
             }
             gamePanel.repaint();
@@ -192,9 +192,13 @@ public class GameClient extends JFrame {
         } else if(msg.startsWith("PLAYERREMOVE:")) {
             int id = Integer.parseInt(msg.substring(13));
             gameState.removePlayer(id);
-        } else if(msg.startsWith("GAME_OVER:")) {
+        } else if (msg.startsWith("GAME_OVER:")) {
             int winnerId = Integer.parseInt(msg.substring(10));
             JOptionPane.showMessageDialog(this, "Game Over! Winner: Player " + winnerId);
+            System.exit(0);
+        } else if (msg.startsWith("GAME_OVER_MULTIPLE:")) {
+            String[] winnerIds = msg.substring(19).split(",");
+            JOptionPane.showMessageDialog(this, "Game Over! Winners: " + String.join(", ", winnerIds));
             System.exit(0);
         }
     }

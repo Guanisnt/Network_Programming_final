@@ -1,5 +1,7 @@
 import java.io.*;
 import java.net.*;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 
 public class GameServer {
@@ -9,7 +11,7 @@ public class GameServer {
     private DatagramSocket udpMovementSocket; // 用來接收client移動封包
 
     private ConcurrentHashMap<Integer, ClientHandler> clients = new ConcurrentHashMap<>();
-    private ConcurrentHashMap<Integer, Integer> playerScores = new ConcurrentHashMap<>(); //計分
+    private ConcurrentHashMap<Integer, Integer> playerScores = new ConcurrentHashMap<>(); //計分<id, score>
     private GameState gameState = new GameState();
     private int nextId = 1;
     private ConcurrentHashMap<Integer, ChattingRoomHandler> chatClients = new ConcurrentHashMap<>();// 聊天室的client
@@ -177,27 +179,42 @@ public class GameServer {
     }
 
     private void checkScores() {
-        for (Sprite player : gameState.getPlayers().values()) {
-            if (!player.isAlive()) {
-                int playerId = player.getId();
-                updateScores(playerId);
+        List<Integer> potentialWinners = new ArrayList<>(); // 可能的贏家
+        for(Sprite player : gameState.getPlayers().values()) { // 檢查每個玩家
+            if(!player.isAlive()) { // 死了
+                int playerId = player.getId(); // 死掉玩家id
+                updateScores(playerId, potentialWinners); // 更新分數
             }
+        }
+        if(!potentialWinners.isEmpty()) {
+            handleWinners(potentialWinners);
         }
     }
 
-    private void updateScores(int fallenPlayerId) {
-        for (int opponentId : gameState.getPlayers().keySet()) {
-            if (opponentId != fallenPlayerId) {
-                playerScores.put(opponentId, playerScores.getOrDefault(opponentId, 0) + 1);
-                broadcastMessage("SCORE_UPDATE:" + fallenPlayerId + ":" + playerScores.getOrDefault(fallenPlayerId, 0) + "," + opponentId + ":" + playerScores.get(opponentId));
-                if (playerScores.get(opponentId) >= WINNING_SCORE) {
-                    broadcastMessage("GAME_OVER:" + opponentId);
-                    resetGame();
-                    return;
+    private void updateScores(int fallenPlayerId, List<Integer> potentialWinners) {
+        for(int opponentId : gameState.getPlayers().keySet()) { // 找對手
+            if(opponentId != fallenPlayerId) {
+                playerScores.put(opponentId, playerScores.getOrDefault(opponentId, 0) + 1); // 對手分數+1
+                broadcastMessage("SCORE_UPDATE:" + fallenPlayerId + ":" + playerScores.getOrDefault(fallenPlayerId, 0) + "," + opponentId + ":" + playerScores.get(opponentId)); // 廣播分數
+                if(playerScores.get(opponentId) >= WINNING_SCORE) { // 分數大於WINNING_SCORE
+                    potentialWinners.add(opponentId);
                 }
             }
         }
         resetPlayer(fallenPlayerId);
+    }
+
+    private void handleWinners(List<Integer> potentialWinners) { // 處理贏家
+        if(potentialWinners.size() == 1) { // 只有一個贏家
+            broadcastMessage("GAME_OVER:" + potentialWinners.get(0)); // 廣播贏家
+        } else {
+            StringBuilder winnersMsg = new StringBuilder("GAME_OVER_MULTIPLE:"); // 多個贏家
+            for(int winnerId : potentialWinners) { // 找贏家
+                winnersMsg.append(winnerId).append(","); // 贏家id加進去
+            }
+            broadcastMessage(winnersMsg.toString());
+        }
+        resetGame(); // 重置遊戲
     }
 
     private int getOpponentId(int playerId) { // 找對手的id
@@ -209,7 +226,7 @@ public class GameServer {
         return -1;
     }
 
-    private void resetPlayer(int playerId) {
+    private void resetPlayer(int playerId) { // 重置玩家
         Sprite player = gameState.getPlayers().get(playerId);
         if (player != null) {
             player.setPosition(GameState.bornPoint[playerId % GameState.bornPoint.length].x, GameState.bornPoint[playerId % GameState.bornPoint.length].y);
@@ -218,8 +235,8 @@ public class GameServer {
         }
     }
 
-    private void resetGame() {
-        playerScores.clear();
+    private void resetGame() { // 重置遊戲
+        playerScores.clear(); // 清空分數
         for(Sprite player : gameState.getPlayers().values()) {
             resetPlayer(player.getId());
         }
