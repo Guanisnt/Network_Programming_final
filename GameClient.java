@@ -200,16 +200,11 @@ public class GameClient extends JFrame {
             gameState.removePlayer(id);
         } else if (msg.startsWith("GAME_OVER:")) {
             int winnerId = Integer.parseInt(msg.substring(10));
-            int score = 3;
-            playerScores.put(winnerId, score);
             gamePanel.repaint();
             JOptionPane.showMessageDialog(this, "Game Over! Winner: Player " + winnerId);
             System.exit(0);
         } else if (msg.startsWith("GAME_OVER_MULTIPLE:")) {
             // 結束前畫出最終分數
-            int winnerId = Integer.parseInt(msg.substring(19));
-            int score = 3;
-            playerScores.put(winnerId, score);
             gamePanel.repaint();
             String[] winnerIds = msg.substring(19).split(",");
             JOptionPane.showMessageDialog(this, "Game Over! Winners: " + String.join(", ", winnerIds));

@@ -114,7 +114,7 @@ public class GameServer {
     
         public ChattingRoomHandler(Socket socket, int clientId, GameServer server) {
             this.socket = socket;
-            this.playerId = playerId;
+            this.playerId = clientId;
             this.server = server;
             try {
                 writer = new BufferedWriter(new OutputStreamWriter(socket.getOutputStream()));
@@ -221,6 +221,9 @@ public class GameServer {
     }
 
     private void handleWinners(List<Integer> potentialWinners) { // 處理贏家
+        // 先廣播最新的遊戲狀態
+        broadcastGameState();
+
         if(potentialWinners.size() == 1) { // 只有一個贏家
             broadcastMessage("GAME_OVER:" + potentialWinners.get(0)); // 廣播贏家
         } else {
